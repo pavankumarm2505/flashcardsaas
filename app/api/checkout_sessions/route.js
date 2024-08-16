@@ -4,8 +4,9 @@ import Stripe from 'stream';
 const formatAmountForStripe=(amount) =>{
     return Math.round(amount*100)
 }
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 export async function POST(req){
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    
     const params= {
         submit_type: 'subscription',
         payment_method_types: ['card'],
@@ -17,6 +18,10 @@ export async function POST(req){
                     name:'Pro Subscription',
                 },
                 unit_amount: formatAmountForStripe(10),
+                recurring:{
+                    interval:'month',
+                    interval_count:1,
+                }
             },
             quantity: 1,
           },
@@ -26,4 +31,8 @@ export async function POST(req){
       };
       const checkoutSession =
         await stripe.checkout.sessions.create(params);
-}
+
+    return NextResponse.json(checkoutSession, {
+        status: 200,
+      });
+    }

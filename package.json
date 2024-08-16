@@ -1,4 +1,13 @@
 {
+  "name": "flashcards",
+  "version": "1.0.0",
+  "description": "creates flashcards",
+  "main": "page.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
     "@clerk/nextjs": "^5.3.1",
     "@emotion/react": "^11.13.0",
