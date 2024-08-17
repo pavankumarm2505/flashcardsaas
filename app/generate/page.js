@@ -5,6 +5,8 @@ import { Box, Button, Card, CardActionArea, CardContent, Container, Dialog, Dial
 import { WriteBatch } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
+import {db} from "@/firebase"
+import {doc, collection, setDoc, getDoc, writeBatch} from 'firebase/firestore'
 export default function Generate() {
     const { isLoaded, isSignedIn, user } = useUser()
     const [flashcards, setFlashcards] = useState([])
@@ -31,42 +33,53 @@ export default function Generate() {
         ))
     }
     const handleOpen = () => {
+        setOpen(true)
+    }
+    const handleClose = () => {
         setOpen(false)
     }
 
     const saveFlashcards = async () => {
         if (!name) {
-            alert('Please enter a name')
+            alert('Please enter a name for your flashcards')
             return
         }
-        const batch = writeBatch(db)
-        const userDocRef = doc(collection(db, 'users'), user.uid)
-        const docSnap = await getDoc(userDocRef)
 
-        if (docSnap.exists()) {
-            const collections = docSnap.data().flashcards || []
-            if (collections.find((c) => c.name === name)) {
-                alert("Flashcard collection with the name already exists"
-
-                )
-                return
+        try {
+            const userDocRef = doc(collection(db, 'users'), user.id)
+            const snapshot = await getDoc(userDocRef)
+            console.log("userDocSnap: ", snapshot.exists())
+        
+            const batch = writeBatch(db)
+        
+            if (snapshot.exists()) {
+                const collections = snapshot.data().flashcards || []
+                console.log("collections: ", collections)
+                if (collections.find((f) => f.name === name)) {
+                    alert('Flashcard collection with the same name already exists.')
+                    return
+                } else {
+                    collections.push({name})
+                    batch.set(userDocRef, {flashcards: collections}, {merge: true})
+                }
             } else {
-                collections.push({ name })
-                batch.set(userDocRef, { flashcards: collections }, { merge: true })
+                console.log("name: ", name)
+                batch.set(userDocRef, { flashcards: [{name}] })
             }
-
+        
+            const setDocRef = doc(collection(userDocRef, 'flashcards'), name)
+            batch.set(setDocRef, { flashcards })
+            console.log("setDocRef: ", setDocRef)
+        
+            await batch.commit()
+            alert('Flashcards saved successfully!')
+            handleClose()
+            setName('')
+            router.push('/flashcards')
+        } catch (error) {
+            console.error('Error saving flashcards:', error)
+            alert('An error occurred while saving flashcards. Please try again.')
         }
-        else {
-            batch.set(userDocRef, { flashcards: [{ name }] })
-        }
-        const colRef = collection(userDocRef, name)
-        flashcards.forEach((flashcard) => {
-            const cardDocRef = doc(colRef)
-            batch.set(cardDocRef, flashcard)
-        })
-        await batch.commit()
-        handleClose()
-        router.push('/flashcards')
     }
     return (
         <Container>
@@ -145,7 +158,7 @@ export default function Generate() {
                     </Box>
                 </Box>
             )}
-            <Dialog open={open} onClose={handleCloseDialog}>
+            <Dialog open={open} onClose={handleClose}>
                 <DialogTitle> Save Flashcards</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
@@ -156,7 +169,7 @@ export default function Generate() {
 
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog}
+                    <Button onClick={handleClose}
                     >
                         Cancel
                     </Button>

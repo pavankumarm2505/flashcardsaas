@@ -29,7 +29,7 @@ export default function Home() {
       }}>
         <Typography variant="h5" gutterBottom >Welcome to Flashcard Saas</Typography>
         <Typography variant="h5" gutterBottom>{''} The easiest way to make flashcards from you text</Typography>
-        <Button variant="contained" color="primary" sx={{ mt: 2 }}>Get Started</Button>
+        <Button variant="contained" color="primary" sx={{ mt: 2 }} href="/generate">Get Started</Button>
       </Box>
 
       <Box sx={{ my: 6 }}>
